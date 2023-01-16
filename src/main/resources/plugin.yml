@@ -1,0 +1,3 @@
+name: PlayerManager
+version: ${project.version}
+main: playermanager.playermanager.PlayerManager
