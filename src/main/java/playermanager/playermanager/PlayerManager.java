@@ -41,7 +41,7 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
     public HashMap<UUID, Inventory> inv = new HashMap<UUID, Inventory>();
     ConsoleCommandSender consol = Bukkit.getConsoleSender();
     public void onLoad() {
-
+//음...
     }
     @Override
     public void onEnable() {
