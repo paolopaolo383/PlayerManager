@@ -4,6 +4,7 @@
     <root id="archive" name="PlayerManager.jar">
       <element id="module-output" name="PlayerManager" />
       <element id="library" level="project" name="craftbukkit-1.12.2" />
+      <element id="library" level="project" name="ProtocolLib" />
     </root>
   </artifact>
 </component>

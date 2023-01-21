@@ -1,3 +1,4 @@
 name: PlayerManager
 version: ${project.version}
 main: playermanager.playermanager.PlayerManager
+depend: [ProtocolLib]

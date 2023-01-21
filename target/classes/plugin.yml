@@ -1,3 +1,4 @@
 name: PlayerManager
 version: 1.0-SNAPSHOT
 main: playermanager.playermanager.PlayerManager
+depend: [ProtocolLib]
