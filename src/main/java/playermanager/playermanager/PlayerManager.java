@@ -268,8 +268,7 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
 
         SkullMeta skullMeta = (SkullMeta) skull.getItemMeta();
         skullMeta.setDisplayName(ChatColor.GRAY+player.getDisplayName());
-        List<String> lore = null;
-        lore.add(ChatColor.GRAY+"lv."+String.valueOf(player.getLevel()));
+        List<String> lore = Arrays.asList(ChatColor.GRAY+"lv."+String.valueOf(player.getLevel()));
         skullMeta.setLore(lore);
 
         skullMeta.setOwner(ChatColor.stripColor(player.getDisplayName()));
