@@ -2,3 +2,9 @@ name: PlayerManager
 version: 1.0-SNAPSHOT
 main: playermanager.playermanager.PlayerManager
 depend: [ProtocolLib]
+authors: [ 481926paolo ]
+description: this is a plugin that allow you to see other player's information and guis.
+website: https://yejunscoding.tistory.com/
+commands:
+  playermanager:
+    usage: /playermanager

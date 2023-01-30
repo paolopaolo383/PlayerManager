@@ -9,20 +9,16 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import net.minecraft.server.v1_12_R1.MinecraftServer;
 import net.minecraft.server.v1_12_R1.WorldServer;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
+import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.craftbukkit.v1_12_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.HumanEntity;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
@@ -45,12 +41,14 @@ import java.util.UUID;
 
 public final class PlayerManager extends JavaPlugin implements Listener, CommandExecutor {
     private ProtocolManager protocolManager;
+    public int maxindex = 27;
     public Material background = Material.IRON_AXE;
-    public int playerhead = 1;
-    public int playerlevel = 2;
-    public int playerjob = 3;
-    public int playertrade = 4;
+    public int playerhead = -1;
+    public int playerlevel = -1;
+    public int playerjob = -1;
+
     public HashMap<Integer, String> cmd = new HashMap<Integer,String>();
+    public HashMap<Integer, ItemStack> cmditem = new HashMap<Integer, ItemStack>();
     public HashMap<UUID, Inventory> inv = new HashMap<UUID, Inventory>();
     ConsoleCommandSender consol = Bukkit.getConsoleSender();
     @Override
@@ -59,7 +57,8 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
         reloadconfig();
         for(Player player : getServer().getOnlinePlayers())
         {
-            inv.put(player.getUniqueId(), Bukkit.createInventory(null, 54, "playerinfo"));
+            inv.put(player.getUniqueId(), Bukkit.createInventory(null, maxindex, " "));
+
         }
         MinecraftServer nmsServer = ((CraftServer) Bukkit.getServer()).getServer();
         WorldServer nmsWorld = ((CraftWorld) Bukkit.getWorlds().get(0)).getHandle();
@@ -76,9 +75,8 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
                 //consol.sendMessage(ChatColor.YELLOW + String.valueOf(packet.getIntegers().size()) + ChatColor.BLUE + packet.getIntegers().getValues().toString() + ChatColor.RED + getServer().getPlayer("LastPieceOfLife").getEntityId());
                 //consol.sendMessage(ChatColor.YELLOW + String.valueOf(packet.getFloat().size()) + ChatColor.GREEN + packet.getFloat().getValues().toString());
                 //consol.sendMessage(ChatColor.YELLOW + packet.getFloat().getValues().toString());
-                 //entity
+                //entity
                 try{
-
                     String what = packet.getStructures().getValues().toString();
 
                     if(!what.contains("INTERACT_AT"))//interact////attack
@@ -103,12 +101,31 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
             }
         });
     }
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
+    {
+        Player player = (Player) sender;
+        if(!sender.isOp())
+        {
+            return true;
+        }
+        if(command.getName().equalsIgnoreCase("playermanager"))
+        {
+            reloadconfig();
+        }
+        return false;
+    }
     public void reloadconfig()
     {
+        for(Player player : getServer().getOnlinePlayers())
+        {
+            player.closeInventory();
+
+        }
         cmd.clear();
-        playerlevel = 3;
-        playerjob =2;
-        playerhead =1;
+        playerlevel = -1;
+        playerjob =-1;
+        playerhead =-1;
         File pluginfile = new File("plugins","PlayerManager.jar");
         consol.sendMessage(pluginfile.getAbsolutePath().split("PlayerManager.jar")[0]+"PlayerManager");
         String folderpath = pluginfile.getAbsolutePath().split("PlayerManager.jar")[0]+"PlayerManager";
@@ -154,14 +171,11 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
                         if(Integer.valueOf(gui.split("/")[1])==2)//playerjob
                         {
                             playerjob = Integer.valueOf(gui.split("/")[0]);
+                            consol.sendMessage(ChatColor.YELLOW+"플레이어 직업은 보류");
                         }
                         if(Integer.valueOf(gui.split("/")[1])==3)//playerlevel
                         {
                             playerlevel = Integer.valueOf(gui.split("/")[0]);
-                        }
-                        if(Integer.valueOf(gui.split("/")[1])==4)//playerlevel
-                        {
-                            playertrade = Integer.valueOf(gui.split("/")[0]);
                         }
                     }
                     catch (Exception e)
@@ -182,6 +196,8 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
                     try
                     {
                         cmd.put(Integer.valueOf(cmdd.split("/")[0]), cmdd.split("/")[1]);
+                        ItemStack item = createGuidmaItem(Material.valueOf(cmdd.split("/")[2]),ChatColor.GRAY+cmdd.split("/")[3],Short.valueOf(cmdd.split("/")[4]), " ");
+                        cmditem.put(Integer.valueOf(cmdd.split("/")[0]), item);
                     }
                     catch (Exception e)
                     {
@@ -196,9 +212,9 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
             }
         }else{
             //consol.sendMessage("File doesnt exist");
-            String[] list = {"(몇번째칸인지)/(어떤건지1=플레이어 헤드,2=직업,3=마크렙,4=거래)"};
+            String[] list = {"(몇번째칸인지)/(어떤건지1=플레이어 헤드,2=직업,3=마크렙)"};
             cnf.set("gui", list);
-            String[] lists = {"(몇번째칸인지)/(커맨드)"};
+            String[] lists = {"(몇번째칸인지)/(커맨드)/(메테리얼ex)DIAMOND_SWORD)/(이름)/(내구도)"};
             cnf.set("command",lists);
             try {
                 cnf.save(file);
@@ -233,8 +249,8 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
     public void onJoin(PlayerJoinEvent e)
     {
         Player player = e.getPlayer();
-        player.sendMessage(ChatColor.RED+player.getName()+ChatColor.YELLOW+player.getCustomName()+ChatColor.GREEN+player.getDisplayName()+ChatColor.BLUE+player.getPlayerListName());
-        inv.put(e.getPlayer().getUniqueId(), Bukkit.createInventory(null, 54, "playerinfo"));
+
+        inv.put(e.getPlayer().getUniqueId(), Bukkit.createInventory(null, maxindex, "playerinfo"));
     }
     @Override
     public void onDisable() {
@@ -243,28 +259,61 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
     public void initializeItems(UUID target) {
         Player player = Bukkit.getPlayer(target);
         inv.get(target).clear();
-        for(int i = 0;i<54;i++)
+        for(int i = 0;i<maxindex;i++)
         {
-            inv.get(target).setItem(i, createGuiItem(background," ", " "));
+            inv.get(target).setItem(i, createGuidmaItem(background," ", (short)64, " "));
         }
-        ItemStack skull = new ItemStack(Material.SKULL_ITEM, 1);
+        inv.get(target).setItem(maxindex-1, createGuidmaItem(background," ", (short)11, " "));
+        ItemStack skull = new ItemStack(Material.SKULL_ITEM, 1,(short) 3);
+
         SkullMeta skullMeta = (SkullMeta) skull.getItemMeta();
-        skullMeta.setDisplayName(player.getDisplayName());
+        skullMeta.setDisplayName(ChatColor.GRAY+player.getDisplayName());
+        List<String> lore = null;
+        lore.add(ChatColor.GRAY+"lv."+String.valueOf(player.getLevel()));
+        skullMeta.setLore(lore);
+
         skullMeta.setOwner(ChatColor.stripColor(player.getDisplayName()));
 
         skull.setItemMeta(skullMeta);
-
-        inv.get(target).setItem(playerhead,skull);
+        if(playerhead!=-1)
+        {
+            inv.get(target).setItem(playerhead, skull);
+        }
         String job = "무직";
         //if(getServer().getPlayer(target).getInventory().)
         //inv.get(target).setItem(playerjob, createGuiItem(Material.IRON_INGOT,job, " "));
-        inv.get(target).setItem(playerlevel,createGuiItem(Material.DIAMOND,ChatColor.getByChar(player.getDisplayName())+String.valueOf(player.getLevel())," "));
-        inv.get(target).setItem(playertrade,createGuiItem(Material.GOLD_INGOT,"trade", " "));
+        if(playerlevel!=-1)
+        {
+            inv.get(target).setItem(playerlevel,createGuiItem(Material.DIAMOND,ChatColor.GRAY+"lv."+String.valueOf(player.getLevel())," "));
+        }
+
+        for(int i = 0; i<maxindex;i++)
+        {
+            if(cmd.containsKey(i)&&cmditem.containsKey(i))
+            {
+                inv.get(target).setItem(i,cmditem.get(i));
+            }
+        }
     }
     protected ItemStack createGuiItem(final Material material, final String name, final String... lore) {
         final ItemStack item = new ItemStack(material, 1);
         final ItemMeta meta = item.getItemMeta();
 
+        // Set the name of the item
+        meta.setDisplayName(name);
+
+        meta.setLore(null);
+
+        item.setItemMeta(meta);
+
+        return item;
+    }
+    protected ItemStack createGuidmaItem(final Material material, final String name, short gamage, final String... lore) {
+        final ItemStack item = new ItemStack(material, 1);
+        item.setDurability(gamage);
+
+        final ItemMeta meta = item.getItemMeta();
+        meta.setUnbreakable(true);
         // Set the name of the item
         meta.setDisplayName(name);
 
@@ -279,18 +328,22 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
     {
         UUID uuid = null;
         try {
-            uuid = getServer().getPlayer(ChatColor.stripColor(e.getClickedInventory().getItem(playerhead).getItemMeta().getDisplayName())).getUniqueId();
-            if (!e.getClickedInventory().equals(inv.get(uuid))) return;
+            uuid = getServer().getPlayer(ChatColor.stripColor(e.getInventory().getItem(playerhead).getItemMeta().getDisplayName())).getUniqueId();
+            if (!e.getInventory().equals(inv.get(uuid))) return;
         }
         catch (Exception ee)
         {
             return;
         }
+        Player player = (Player)e.getWhoClicked();
+        //volume pitch
+
         e.setCancelled(true);
         if(cmd.containsKey(e.getRawSlot()))
         {
             getServer().dispatchCommand(e.getWhoClicked(),cmd.get(e.getRawSlot()).replace("{targetplayer}",getServer().getPlayer(uuid).getName()));
             e.getWhoClicked().closeInventory();
+            player.playSound(player.getLocation(),Sound.ENTITY_CHICKEN_EGG,100, 1);
         }
 
     }
