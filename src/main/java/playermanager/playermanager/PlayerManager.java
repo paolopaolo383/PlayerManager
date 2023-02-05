@@ -27,6 +27,7 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
@@ -164,29 +165,17 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
                 {
                     try
                     {
-                        if(Integer.valueOf(gui.split("/")[1])==1)//playerhead
-                        {
-                            playerhead = Integer.valueOf(gui.split("/")[0]);
-                        }
-                        if(Integer.valueOf(gui.split("/")[1])==2)//playerjob
-                        {
-                            playerjob = Integer.valueOf(gui.split("/")[0]);
-                            consol.sendMessage(ChatColor.YELLOW+"플레이어 직업은 보류");
-                        }
-                        if(Integer.valueOf(gui.split("/")[1])==3)//playerlevel
-                        {
-                            playerlevel = Integer.valueOf(gui.split("/")[0]);
-                        }
+                        playerhead = Integer.valueOf(gui);
                     }
                     catch (Exception e)
                     {
-                        consol.sendMessage(ChatColor.RED+gui+"이 로드되지 않음");
+                        consol.sendMessage(ChatColor.RED+"플레이어헤드가 로드되지 않음");
                     }
                 }
             }
             else
             {
-                consol.sendMessage(ChatColor.YELLOW+"로드할 gui가 없음");
+                consol.sendMessage(ChatColor.YELLOW+"플레이어헤드의 설정값이 없어 사라집니다.");
             }
             List<String> command = (List<String>) cnf.getList("command");
             if(!(command.isEmpty()))
@@ -198,10 +187,11 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
                         cmd.put(Integer.valueOf(cmdd.split("/")[0]), cmdd.split("/")[1]);
                         ItemStack item = createGuidmaItem(Material.valueOf(cmdd.split("/")[2]),ChatColor.GRAY+cmdd.split("/")[3],Short.valueOf(cmdd.split("/")[4]), " ");
                         cmditem.put(Integer.valueOf(cmdd.split("/")[0]), item);
+                        consol.sendMessage(ChatColor.RED+cmdd.split("/")[1]+"이 로드됨");
                     }
                     catch (Exception e)
                     {
-                        consol.sendMessage(ChatColor.RED+cmdd+"이 로드되지 않음");
+                        consol.sendMessage(ChatColor.RED+cmdd.split("/")[1]+"이 로드되지 않음");
                     }
 
                 }
@@ -212,7 +202,7 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
             }
         }else{
             //consol.sendMessage("File doesnt exist");
-            String[] list = {"(몇번째칸인지)/(어떤건지1=플레이어 헤드,2=직업,3=마크렙)"};
+            String[] list = {"(몇번째칸인지)"};
             cnf.set("gui", list);
             String[] lists = {"(몇번째칸인지)/(커맨드)/(메테리얼ex)DIAMOND_SWORD)/(이름)/(내구도)"};
             cnf.set("command",lists);
@@ -281,10 +271,10 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
         String job = "무직";
         //if(getServer().getPlayer(target).getInventory().)
         //inv.get(target).setItem(playerjob, createGuiItem(Material.IRON_INGOT,job, " "));
-        if(playerlevel!=-1)
-        {
-            inv.get(target).setItem(playerlevel,createGuiItem(Material.DIAMOND,ChatColor.GRAY+"lv."+String.valueOf(player.getLevel())," "));
-        }
+        //if(playerlevel!=-1)
+        //{
+        //    inv.get(target).setItem(playerlevel,createGuiItem(Material.DIAMOND,ChatColor.GRAY+"lv."+String.valueOf(player.getLevel())," "));
+        //}
 
         for(int i = 0; i<maxindex;i++)
         {
@@ -300,7 +290,7 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
 
         // Set the name of the item
         meta.setDisplayName(name);
-
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.setLore(null);
 
         item.setItemMeta(meta);
@@ -313,6 +303,8 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
 
         final ItemMeta meta = item.getItemMeta();
         meta.setUnbreakable(true);
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+        meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
         // Set the name of the item
         meta.setDisplayName(name);
 
