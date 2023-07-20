@@ -7,9 +7,10 @@ import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import net.minecraft.server.v1_12_R1.MinecraftServer;
-import net.minecraft.server.v1_12_R1.WorldServer;
+import net.milkbowl.vault.economy.Economy;
+import net.minecraft.server.v1_12_R1.*;
 import org.bukkit.*;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -18,6 +19,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.craftbukkit.v1_12_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -32,9 +34,11 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -72,36 +76,39 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
             public void onPacketReceiving(PacketEvent event) {
                 if (!event.getPlayer().isSneaking())
                     return;
-                PacketContainer packet = event.getPacket();
+
                 //consol.sendMessage(ChatColor.YELLOW + String.valueOf(packet.getIntegers().size()) + ChatColor.BLUE + packet.getIntegers().getValues().toString() + ChatColor.RED + getServer().getPlayer("LastPieceOfLife").getEntityId());
                 //consol.sendMessage(ChatColor.YELLOW + String.valueOf(packet.getFloat().size()) + ChatColor.GREEN + packet.getFloat().getValues().toString());
                 //consol.sendMessage(ChatColor.YELLOW + packet.getFloat().getValues().toString());
                 //entity
-                try{
-                    String what = packet.getStructures().getValues().toString();
+                String what;
+                PacketContainer packet = event.getPacket();
+                try {
 
-                    if(!what.contains("INTERACT_AT"))//interact////attack
-                    {
+
+                    if (!packet.getClass().getDeclaredField("b").equals(PacketPlayInUseEntity.EnumEntityUseAction.INTERACT_AT)) {
                         return;
                     }
-                    if(!what.contains("MAIN_HAND"))
-                    {
+                    if (!packet.getClass().getDeclaredField("d").toString().equalsIgnoreCase("MAIN_HAND")) {
                         return;
+                    }
+                    Integer Target = Integer.valueOf(String.valueOf(packet.getClass().getDeclaredField("a")));
+                    for (Player e : getServer().getOnlinePlayers()) {
+                        if (e.getEntityId() == Target) {
+                            openInventory(event.getPlayer(), e.getUniqueId());
+                        }
                     }
                 }
-                catch (Exception ex)
+                catch(Exception e)
                 {
-                    return;
+                    consol.sendMessage("efwds");
                 }
-                Integer Target = packet.getIntegers().read(0);
-                for (Player e : getServer().getOnlinePlayers()) {
-                    if (e.getEntityId() == Target) {
-                        openInventory(event.getPlayer(), e.getUniqueId());
-                    }
-                }
+
             }
         });
     }
+    @EventHandler
+    public void onDamaged(Player)
     @Override
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args)
     {
@@ -217,9 +224,14 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
         consol.sendMessage(ChatColor.YELLOW+"---------------완료---------------");
     }
     public void openInventory(final Player ent, UUID target) {
-        initializeItems(target);
+        Player p = Bukkit.getPlayer(target);
+        if(p.isOnline())
+        {
+            initializeItems(target);
 
-        ent.openInventory(inv.get(target));
+            ent.openInventory(inv.get(target));
+        }
+
     }
     @EventHandler
     public void onQuit(PlayerQuitEvent e)
@@ -235,12 +247,34 @@ public final class PlayerManager extends JavaPlugin implements Listener, Command
             player.closeInventory();
         }
     }
+    public void tabfooterstring(Player player , String footer){
+        CraftPlayer craftplayer = (CraftPlayer) player;
+        PlayerConnection connection = craftplayer.getHandle().playerConnection;
+        IChatBaseComponent headerJson = IChatBaseComponent.ChatSerializer.a("{\"text\":\"\"}");
+        IChatBaseComponent footerJson = IChatBaseComponent.ChatSerializer.a("{\"text\":\"" + footer + "\"}");
+        PacketPlayOutPlayerListHeaderFooter packet = new PacketPlayOutPlayerListHeaderFooter();
+        try {
+            Field headerField = packet.getClass().getDeclaredField("a");
+            headerField.setAccessible(true);
+            headerField.set(packet, headerJson);
+            headerField.setAccessible(!headerField.isAccessible());
+
+            Field footerField = packet.getClass().getDeclaredField("b");
+            footerField.setAccessible(true);
+            footerField.set(packet, footerJson);
+            footerField.setAccessible(!footerField.isAccessible());
+        } catch (Exception exc) {
+            exc.printStackTrace();
+        }
+        connection.sendPacket(packet);
+    }
     @EventHandler
     public void onJoin(PlayerJoinEvent e)
     {
         Player player = e.getPlayer();
 
         inv.put(e.getPlayer().getUniqueId(), Bukkit.createInventory(null, maxindex, "playerinfo"));
+
     }
     @Override
     public void onDisable() {
